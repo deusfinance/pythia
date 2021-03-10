@@ -86,11 +86,14 @@ def request_handler():
     send the response when data is ready
     """
 
-    minutes_to_check = 0
+    seconds_to_check = 0
     confirmed = False
-    while minutes_to_check < 120:
+    all_signatures = []
+    signers = set()
+    while seconds_to_check < 120:
         time.sleep(1)
         all_signatures = db['signatures'].find({'request': request_id})
+        all_signatures = list(all_signatures)
         signers = set()
         for sig in all_signatures:
             message_to_recover = json.dumps({
@@ -105,13 +108,22 @@ def request_handler():
         if len(signers) >= int(os.getenv("NUM_SIGN_TO_CONFIRM")):
             confirmed = True
             break
-        minutes_to_check += 1
+        seconds_to_check += 1
+
 
     return jsonify({
         "success": confirmed,
         "symbol": symbol,
         "price": current_price['close'],
         # "candle": current_price,
+        "creator": os.getenv("NODE_WALLET_ADDRESS"),
+        "signatures": [{
+            "owner": s['owner'],
+            "timestamp": s['timestamp'],
+            "price": s['price'],
+            "signature": s['signature'],
+        } for s in all_signatures if s['owner'] in signers],
+        # "signers": [s for s in signers]
     })
 
 
