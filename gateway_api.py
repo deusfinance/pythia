@@ -1,16 +1,10 @@
-from flask import Flask, request, jsonify, redirect
-import traceback
-import sys
-import random
+from flask import Flask, request, jsonify
 import time
-from flask import session
-from flask import send_from_directory
 import os
-import shutil
-import datetime
 import redis
 import json
-from utils import finnhub, mongo, crypto
+from utils import mongo, crypto
+import sources
 from env import load_env
 load_env()
 
@@ -30,6 +24,7 @@ def indx():
         "msg": "Pythia API v1",
     })
 
+db = mongo.DB()
 
 @app.route('/api/v1/request', methods=['GET', 'POST'])
 def request_handler():
@@ -39,14 +34,29 @@ def request_handler():
     2- save in mongo
     """
     symbol = request.args.get('symbol')
-    current_price = finnhub.get_stock_price(symbol)
+    source = request.args.get('source', default='finnhub')
+    print("new request for symbol: %s from source: %s" % (symbol, source))
 
-    db = mongo.DB()
+    [current_price, error] = sources.get_symbol_price(symbol, source)
+    if error:
+        return jsonify({
+            "success": False,
+            "message": error
+        })
+
+    if not current_price:
+        return jsonify({
+            "success": False,
+            "symbol": symbol,
+            "message": "Cannot get symbol price"
+        })
+
     new_request = {
         "symbol": symbol,
-        "price": current_price['close'],
+        "price": current_price['price'],
         "timestamp": current_price['timestamp'],
         "owner": os.getenv("NODE_WALLET_ADDRESS"),
+        "source": source,
         "rawPrice": current_price,
     }
     request_id = db.insert_dic(new_request, 'requests')
@@ -55,13 +65,13 @@ def request_handler():
     message_to_sign = json.dumps({
         "id": str(request_id),
         "timestamp": sign_timestamp,
-        "price": current_price['close']
+        "price": current_price['price']
     })
     signature = crypto.sign(os.getenv("NODE_WALLET_PRIVATE_KEY"), message_to_sign)
 
     db.insert_dic({
         'request': request_id,
-        "price": current_price['close'],
+        "price": current_price['price'],
         "timestamp": sign_timestamp,
         "owner": os.getenv("NODE_WALLET_ADDRESS"),
         "signature": signature
@@ -90,8 +100,8 @@ def request_handler():
     confirmed = False
     all_signatures = []
     signers = set()
-    while seconds_to_check < 120:
-        time.sleep(1)
+    while seconds_to_check < 5:
+        time.sleep(0.25)
         all_signatures = db['signatures'].find({'request': request_id})
         all_signatures = list(all_signatures)
         signers = set()
@@ -108,13 +118,13 @@ def request_handler():
         if len(signers) >= int(os.getenv("NUM_SIGN_TO_CONFIRM")):
             confirmed = True
             break
-        seconds_to_check += 1
+        seconds_to_check += 0.25
 
 
     return jsonify({
         "success": confirmed,
         "symbol": symbol,
-        "price": current_price['close'],
+        "price": current_price['price'],
         # "candle": current_price,
         "creator": os.getenv("NODE_WALLET_ADDRESS"),
         "signatures": [{

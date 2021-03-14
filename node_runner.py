@@ -8,6 +8,7 @@ import node_utils
 import os, traceback
 from utils import cmd_options
 from env import load_env
+import sources
 
 
 def bytes_to_string(l):
@@ -36,6 +37,7 @@ class Sender(threading.Thread):
         print("Starting Sender ...")
         while True:
             source, data = self.redis_con.blpop(self.queue)
+            print('========= sender ==========', data)
             self.handle_message(bytes_to_string(data))
 
     def handle_message(self, data):
@@ -54,6 +56,7 @@ class Receiver(threading.Thread):
         print("Starting Receiver ...")
         while True:
             values = packing.receive_msg(sock)
+            print('========= receiver ==========', values)
             try:
                 self.handle_message(values)
             except:
@@ -94,6 +97,8 @@ if __name__ == "__main__":
         sender.daemon = True
         sender.start()
 
+        sources.init_services()
+
         receiver.join()
         sender.join()
     else:
@@ -109,9 +114,4 @@ if __name__ == "__main__":
         receiver.daemon = True
         receiver.start()
 
-        sender = Sender(sock)
-        sender.daemon = True
-        sender.start()
-
         receiver.join()
-        sender.join()
