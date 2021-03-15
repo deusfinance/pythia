@@ -10,7 +10,7 @@ def on_trade_data(data):
             "price": trade['p'],
             "timestamp": int(trade['t'] / 1000)
         }
-        print(price)
+        # print(price)
         price_cache.set_symbol_price(trade['s'], price)
 
 
@@ -22,7 +22,6 @@ def on_message(ws, message):
             on_trade_data(message['data'])
         else:
             print(message)
-
     except ValueError:
         print("Unknown response", message)
 
