@@ -37,7 +37,6 @@ class Sender(threading.Thread):
         print("Starting Sender ...")
         while True:
             source, data = self.redis_con.blpop(self.queue)
-            print('========= sender ==========', data)
             self.handle_message(bytes_to_string(data))
 
     def handle_message(self, data):
@@ -56,7 +55,6 @@ class Receiver(threading.Thread):
         print("Starting Receiver ...")
         while True:
             values = packing.receive_msg(sock)
-            print('========= receiver ==========', values)
             try:
                 self.handle_message(values)
             except:
