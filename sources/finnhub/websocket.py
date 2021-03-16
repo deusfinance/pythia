@@ -1,5 +1,5 @@
 #https://pypi.org/project/websocket_client/
-import websocket, json, os
+import websocket, threading, json, os, time
 from . import price_cache
 
 
@@ -21,7 +21,7 @@ def on_message(ws, message):
         if message['type'] == 'trade':
             on_trade_data(message['data'])
         else:
-            print(message)
+            print("finnhub ws: %s - [%s]" % (message, time.ctime()))
     except ValueError:
         print("Unknown response", message)
 
@@ -31,10 +31,14 @@ def on_error(ws, error):
 
 
 def on_close(ws):
-    print("### closed ###")
+    print("============== finnhub trade socket subscription closed ==============")
+    time.sleep(10)
+    print("============== finnhub trade socket subscription retry ==============")
+    start()
 
 
 def on_open(ws):
+    print("============== finnhub trade socket subscription start ==============")
     ws.send('{"type":"subscribe","symbol":"TSLA"}')
 
 
@@ -42,13 +46,15 @@ def start():
     print('============== Finnhub Websocket Start ==============')
     websocket.enableTrace(True)
     ws = websocket.WebSocketApp(
-        # "wss://ws.finnhub.io?token=c0v5f0v48v6pr2p75fmg",
         "wss://ws.finnhub.io?token=%s" % os.getenv("FINNHUB_API_KEY"),
         on_message=on_message,
         on_error=on_error,
         on_close=on_close)
     ws.on_open = on_open
-    ws.run_forever()
+
+    ws_thread = threading.Thread(target=ws.run_forever)
+    # ws_thread.daemon = True
+    ws_thread.start()
 
 
 if __name__ == "__main__":
