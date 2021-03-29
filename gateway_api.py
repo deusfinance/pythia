@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import time
 import os
 import redis
@@ -16,6 +17,7 @@ app = Flask(__name__)
 app.secret_key = "ghgdghfhgfdfsdaxcxzczdb"
 app.redis_client = redis.Redis(host=os.getenv("REDIS_HOST"))
 app.redis_queue = os.getenv("REDIS_QUEUE")
+CORS(app)
 
 @app.route('/', methods=['GET', 'POST'])
 def indx():
