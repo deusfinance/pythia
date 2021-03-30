@@ -39,7 +39,7 @@ def request_handler():
     source = request.args.get('source', default='finnhub')
     print("new request for symbol: %s from source: %s" % (symbol, source))
 
-    started_at = int(time.time())
+    started_at = int(time.time() * 1000)
     confirmed_at= None
 
     [current_price, error] = sources.get_symbol_price(symbol, source)
@@ -123,7 +123,7 @@ def request_handler():
             signers.add(sig_owner)
         if len(signers) >= int(os.getenv("NUM_SIGN_TO_CONFIRM")):
             confirmed = True
-            confirmed_at = int(time.time())
+            confirmed_at = int(time.time() * 1000)
             db["requests"].update_one({"_id": request_id}, {"$set": {"confirmed_at": confirmed_at}})
             break
         seconds_to_check += 0.25
