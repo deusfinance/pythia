@@ -35,9 +35,12 @@ def request_handler():
     1- get json data from request
     2- save in mongo
     """
-    symbol = request.args.get('symbol')
+    symbol = request.args.get('symbol').upper()
     source = request.args.get('source', default='finnhub')
     print("new request for symbol: %s from source: %s" % (symbol, source))
+
+    started_at = int(time.time())
+    confirmed_at= None
 
     [current_price, error] = sources.get_symbol_price(symbol, source)
     if error:
@@ -60,6 +63,7 @@ def request_handler():
         "owner": os.getenv("NODE_WALLET_ADDRESS"),
         "source": source,
         "rawPrice": current_price,
+        "started_at": started_at,
     }
     request_id = db.insert_dic(new_request, 'requests')
 
@@ -119,6 +123,8 @@ def request_handler():
             signers.add(sig_owner)
         if len(signers) >= int(os.getenv("NUM_SIGN_TO_CONFIRM")):
             confirmed = True
+            confirmed_at = int(time.time())
+            db["requests"].update_one({"_id": request_id}, {"$set": {"confirmed_at": confirmed_at}})
             break
         seconds_to_check += 0.25
 
@@ -135,6 +141,8 @@ def request_handler():
             "price": s['price'],
             "signature": s['signature'],
         } for s in all_signatures if s['owner'] in signers],
+        "started_at": started_at,
+        "confirmed_at": confirmed_at
         # "signers": [s for s in signers]
     })
 
