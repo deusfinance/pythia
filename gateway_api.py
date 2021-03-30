@@ -50,7 +50,7 @@ def request_handler():
         return jsonify({
             "success": False,
             "symbol": symbol,
-            "message": "Cannot get symbol price"
+            "message": "Not found"
         })
 
     new_request = {
