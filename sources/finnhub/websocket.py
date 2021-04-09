@@ -41,7 +41,7 @@ def on_open(ws):
     print("============== finnhub trade socket subscription start ==============")
     symbols_to_subscribe = os.getenv('FINNHUB_SUBSCRIBE_SYMBOLS', "TSLA").split(';')
     for symbol in symbols_to_subscribe:
-        print('>>>>>>>>>> subscribing to symbol: %s' % symbol)
+        # print('>>>>>>>>>> subscribing to symbol: %s' % symbol)
         ws.send('{"type":"subscribe","symbol":"%s"}' % symbol)
 
 
