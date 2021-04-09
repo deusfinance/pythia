@@ -8,23 +8,39 @@ def get_stock_candle(symbol, ts1, ts2):
     return r.json()
 
 
+def get_quote(symbol):
+    r = requests.get("https://finnhub.io/api/v1/quote?symbol=%s&token=%s" % (symbol, os.getenv('FINNHUB_API_KEY')))
+    return r.json()
+
+
+def get_price_target(symbol):
+    r = requests.get("https://finnhub.io/api/v1/stock/price-target?symbol=%s&token=%s" % (symbol, os.getenv('FINNHUB_API_KEY')))
+    return r.json()
+
+
+# https://finnhub.io/docs/api/price-target
 def get_stock_price(symbol, timestamp=None):
     if timestamp is None:
-        timestamp = int(time.time())
-
-    result = get_stock_candle(symbol, timestamp-1200, timestamp)
-    if result['s'] == "ok" and result['l']:
-        n = len(result['l']) - 1
-        return {
-            "symbol": symbol,
-            # "low": result['l'][n],
-            # "high": result['h'][n],
-            # "open": result['o'][n],
-            # "close": result['c'][n],
-            "price": result['c'][n],
-            "timestamp": result['t'][n],
-            # "raw": result
-        }
+        result = get_quote(symbol)
+        if 'c' in result and result['c'] > 0:
+            return {
+                "symbol": symbol,
+                # "price": result['targetMean'],
+                "price": result['c'],
+                "timestamp": result['t'],
+            }
+        else:
+            print('api failed', result)
+            return None
     else:
-        print('api failed', result)
-        return None
+        result = get_stock_candle(symbol, timestamp-1200, timestamp)
+        if result['s'] == "ok" and result['l']:
+            n = len(result['l']) - 1
+            return {
+                "symbol": symbol,
+                "price": result['c'][n],
+                "timestamp": result['t'][n],
+            }
+        else:
+            print('api failed', result)
+            return None
