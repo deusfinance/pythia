@@ -61,6 +61,12 @@ def main():
     # Read
     gossip_config = config_parser.read_config(config_file_path)
 
+    # Override gossip_config from environments
+    for key in os.environ.keys():
+        if key.startswith('gossip_config_'):
+            real_key = key[len('gossip_config_'):]
+            gossip_config[real_key] = os.getenv(key)
+
     # Gossip layers with queues between them:
     #
     #          <---- API connections <----
