@@ -73,6 +73,8 @@ def main():
             gossip_config['bootstrapper'] = {'host': b_host, 'port': b_port}
         else:
             gossip_config['bootstrapper'] = None
+    else:
+        gossip_config['bootstrapper'] = None
 
 
     # Gossip layers with queues between them:
