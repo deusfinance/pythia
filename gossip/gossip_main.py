@@ -67,6 +67,14 @@ def main():
             real_key = key[len('gossip_config_'):]
             gossip_config[real_key] = os.getenv(key)
 
+    if gossip_config['bootstrapper']:
+        b_host, b_port = gossip_config['bootstrapper'].split(':')
+        if b_host and b_port:
+            gossip_config['bootstrapper'] = {'host': b_host, 'port': b_port}
+        else:
+            gossip_config['bootstrapper'] = None
+
+
     # Gossip layers with queues between them:
     #
     #          <---- API connections <----
