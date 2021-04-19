@@ -70,7 +70,7 @@ def main():
     if gossip_config['bootstrapper']:
         b_host, b_port = gossip_config['bootstrapper'].split(':')
         if b_host and b_port:
-            gossip_config['bootstrapper'] = {'host': b_host, 'port': b_port}
+            gossip_config['bootstrapper'] = {'host': b_host, 'port': int(b_port)}
         else:
             gossip_config['bootstrapper'] = None
     else:
