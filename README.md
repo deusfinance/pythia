@@ -1,4 +1,5 @@
-# DEPRICATED
+# DEPRECATED
+
 # pythia
 
 
